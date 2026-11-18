@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="de-CH"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prompt-Trainer Wirkungsgefüge</title>
+<style>
+  :root{
+    --blue:#1F5E4A; --blue2:#2E7D5B; --bg:#F3F6F4; --card:#fff; --line:#D3DED8;
+    --text:#1D2A24; --muted:#5A6B63; --orange:#C55A11; --green:#2E7D32; --soft:#EEF4F0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:Calibri,Carlito,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--text);font-size:17px;line-height:1.45;padding-bottom:110px}
+  header{background:var(--blue);color:#fff;padding:18px 20px 14px}
+  header h1{margin:0;font-size:24px}
+  header p{margin:4px 0 0;opacity:.9;font-size:15px}
+  .wrap{max-width:980px;margin:0 auto;padding:16px}
+  h2{font-size:19px;margin:22px 0 10px;color:var(--blue)}
+  h3{font-size:16px;margin:18px 0 4px;color:var(--blue)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+  .mod{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:12px 14px;
+    text-align:left;font:inherit;color:inherit;cursor:pointer;min-height:76px}
+  .mod b{display:block;font-size:16px}
+  .mod span{font-size:14px;color:var(--muted)}
+  .mod .rb{display:inline-block;margin-top:6px;font-size:12px;font-weight:700;color:var(--blue);
+    background:var(--soft);border-radius:6px;padding:2px 7px}
+  .mod.active{border-color:var(--blue2);background:var(--soft);box-shadow:0 0 0 2px var(--blue2) inset}
+  .mod.active .rb{background:#fff}
+  .mod .nr{font-size:13px;font-weight:700;color:var(--blue2)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:700px){.row{grid-template-columns:1fr}}
+  label{display:block;font-weight:600;font-size:15px;margin:10px 0 4px}
+  label small{font-weight:400;color:var(--muted)}
+  input,select,textarea{width:100%;font:inherit;font-size:16px;padding:11px 12px;border:1.5px solid var(--line);
+    border-radius:10px;background:#fff;color:var(--text)}
+  textarea{min-height:90px;resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue2)}
+  .seg{display:flex;flex-wrap:wrap;gap:8px}
+  .seg button{font:inherit;font-size:16px;padding:10px 16px;border-radius:999px;border:1.5px solid var(--line);
+    background:#fff;cursor:pointer;color:inherit;min-height:44px}
+  .seg button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .lpinfo{background:#FFF7E6;border:1px solid #F0D39A;border-radius:12px;padding:10px 14px;font-size:15px}
+  .lpinfo b{color:#8a5a00}
+  .lrinfo{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:15px;margin-top:10px}
+  .lrinfo b{color:var(--blue)}
+  .preview{white-space:pre-wrap;font-size:15px;background:var(--soft);border-left:5px solid var(--blue);
+    border-radius:10px;padding:14px;max-height:420px;overflow:auto}
+  .ph{color:var(--orange);font-weight:700}
+  .warn{color:var(--orange);font-size:15px;margin-top:8px}
+  .ok{color:var(--green);font-size:15px;margin-top:8px}
+  .muted{color:var(--muted);font-size:15px}
+  .bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom));display:flex;gap:10px;justify-content:center;z-index:5}
+  .btn{font:inherit;font-size:18px;font-weight:700;padding:14px 22px;border-radius:12px;border:none;cursor:pointer}
+  .btn.primary{background:var(--blue);color:#fff;min-width:240px}
+  .btn.primary.done{background:var(--green)}
+  .btn.ghost{background:#fff;border:1.5px solid var(--line);color:var(--blue)}
+  .btn.small{font-size:16px;padding:11px 16px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font:inherit;font-size:15px;padding:9px 14px;border-radius:999px;border:1.5px dashed var(--blue2);
+    background:#fff;color:var(--blue);cursor:pointer;min-height:44px}
+  .lpbtn{background:none;border:1px solid rgba(255,255,255,.5);color:#fff;font:inherit;font-size:14px;
+    padding:10px 14px;border-radius:8px;cursor:pointer;float:right;margin-top:-2px;min-height:44px}
+  .modal{position:fixed;inset:0;background:rgba(20,30,25,.6);display:flex;align-items:center;
+    justify-content:center;padding:16px;z-index:20}
+  .modal .card{width:100%;max-width:460px;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+  .pwrow{display:flex;gap:10px;flex-wrap:wrap}
+  .pwrow input{flex:1 1 220px}
+  .hidden{display:none!important}
+  .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:#1d2430;color:#fff;
+    padding:10px 18px;border-radius:10px;font-size:15px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:9}
+  .toast.show{opacity:1}
+  .fallback{width:100%;min-height:200px;font-size:14px}
+</style>
+</head>
+<body>
+<header>
+  <button class="lpbtn" id="lpToggle">Lehrperson</button>
+  <h1>Prompt-Trainer Wirkungsgefüge</h1>
+  <p>Weltsicht 3 · System Erde. KI als Coach, nicht als Ghostwriter. Lebensraum und Arbeitsschritt wählen, Angaben ausfüllen, Prompt kopieren.</p>
+</header>
+
+<div class="wrap">
+
+  <!-- Passwort-Abfrage -->
+  <section id="pwBox" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="pwTitle">
+    <div class="card">
+      <h2 id="pwTitle" style="margin-top:0">Bereich der Lehrperson</h2>
+      <p class="muted" style="margin:0 0 6px">Nur für die Lehrperson. Bitte Passwort eingeben.</p>
+      <label for="pwInput">Passwort</label>
+      <div class="pwrow">
+        <input type="password" id="pwInput" autocomplete="current-password">
+        <button class="btn primary small" id="pwOk" style="min-width:0">Öffnen</button>
+        <button class="btn ghost small" id="pwCancel">Abbrechen</button>
+      </div>
+      <p class="warn hidden" id="pwMsg"></p>
+    </div>
+  </section>
+
+  <!-- Lehrpersonen-Bereich -->
+  <section id="lpPanel" class="hidden">
+    <h2>Einstellungen der Lehrperson</h2>
+    <div class="card">
+      <p style="margin-top:0;font-size:15px;color:var(--muted)">Diese Angaben erscheinen in den Arbeitsschritten. Leere Felder füllen die SuS selbst aus.</p>
+      <label>Auftrag</label><textarea data-lp="auftrag"></textarea>
+      <div class="row">
+        <div><label>Abgabe</label><input data-lp="abgabe" placeholder="z. B. Freitag, 18. Dezember"></div>
+        <div><label>Verfügbare Zeit</label><input data-lp="zeit" placeholder="z. B. 6 Lektionen"></div>
+      </div>
+      <label>Vorgabe Quellen <small>(Arbeitsschritt 3)</small></label><input data-lp="quellen">
+      <label>Bewertungskriterien <small>(Arbeitsschritt 6)</small></label><textarea data-lp="kriterien"></textarea>
+      <button class="btn ghost small" id="lpKrit" style="margin-top:8px">Kriterien aus dem Beurteilungsraster einsetzen (A1–A5)</button>
+      <label>Darf die KI im Internet suchen?</label>
+      <select data-lp="web">
+        <option value="ohne">Nein: KI ohne Websuche (prüft nur, was die SuS liefern)</option>
+        <option value="mit">Ja, nur zum Prüfen: KI nennt immer den Link, SuS öffnen ihn selbst</option>
+      </select>
+      <label style="margin-top:14px">Welche Arbeitsschritte sollen die SuS sehen?</label>
+      <div class="chips" id="lpModules"></div>
+      <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:10px">
+        <button class="btn ghost" id="lpDownload">Klassen-Version herunterladen</button>
+        <button class="btn ghost" id="lpReset">Alles zurücksetzen</button>
+        <button class="btn ghost" id="lpLock">Bereich sperren</button>
+      </div>
+      <p class="warn" style="font-size:14px">Den SuS immer die Klassen-Version geben. Darin ist der Bereich der Lehrperson ganz ausgeblendet. Der Download funktioniert nur, wenn diese Datei direkt im Browser geöffnet ist.</p>
+
+      <h3>Passwort ändern</h3>
+      <p class="muted" style="margin:0">Das Passwort ist in der Datei gespeichert. Nach dem Ändern wird eine neue Datei heruntergeladen. Ersetze damit deine bisherige Datei (auch auf OneDrive oder GitHub).</p>
+      <div class="row">
+        <div><label>Neues Passwort <small>(mind. 8 Zeichen)</small></label><input type="password" id="pwNew1" autocomplete="new-password"></div>
+        <div><label>Neues Passwort wiederholen</label><input type="password" id="pwNew2" autocomplete="new-password"></div>
+      </div>
+      <button class="btn ghost small" id="pwChange" style="margin-top:10px">Passwort ändern und Datei herunterladen</button>
+      <p class="warn hidden" id="pwChangeMsg"></p>
+    </div>
+  </section>
+
+  <h2>Euer Lebensraum</h2>
+  <div class="card">
+    <label for="lrSel" style="margin-top:0">Welchen Lebensraum habt ihr?</label>
+    <select id="lrSel"></select>
+    <div id="lrInfo" class="lrinfo hidden"></div>
+  </div>
+
+  <h2>Woran arbeitet ihr gerade?</h2>
+  <div class="grid" id="modGrid"></div>
+
+  <h2>Angaben ausfüllen</h2>
+  <div class="card">
+    <label style="margin-top:0">Wie arbeitet ihr?</label>
+    <div class="seg" id="groupSeg"></div>
+    <div id="lpInfo" class="lpinfo hidden" style="margin-top:12px"></div>
+    <div id="fields"></div>
+  </div>
+
+  <h2>Prompt prüfen und kopieren</h2>
+  <div class="preview" id="preview"></div>
+  <div id="status"></div>
+
+  <div id="fallbackBox" class="hidden" style="margin-top:16px">
+    <p class="warn">Automatisches Kopieren hat nicht geklappt. Text im Feld lange antippen, «Alles auswählen» und «Kopieren» wählen.</p>
+    <textarea class="fallback" id="fallbackText" readonly=""></textarea>
+  </div>
+</div>
+
+<div class="bar">
+  <button class="btn primary" id="copyBtn">Prompt kopieren</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// Wird beim Herunterladen der Klassen-Version durch die Einstellungen der Lehrperson ersetzt.
+const EMBED = /*CFG*/{"auftrag":"Wir erstellen ein digitales Wirkungsgefüge (PowerPoint, OneNote, GoodNotes oder Canva) zu unserem Lebensraum. Es zeigt Elemente, Wechselwirkungen, Probleme und Folgen und beantwortet unsere Leitfrage.","quellen":"MINDESTENS 3 Quellen, davon MINDESTENS 1 aus dem Themenbuch oder dem Arbeitsheft 3.2","kriterien":"A1 Stimmen unsere Elemente und Pfeile? Erfüllen wir alle Mindestanforderungen?\nA2 Hat jeder Pfeil ein passendes Verb? Erklären wir Fachbegriffe in eigenen Worten?\nA3 Kommen Ökologie, Soziales und Wirtschaft vor? Gibt es einen Kreislauf? Zeigen wir Menschengruppen und ihre Interessen?\nA4 Folgt unsere Antwort auf die Leitfrage aus dem Wirkungsgefüge? Begründen wir sie?\nA5 Sind Titel, Legende, Farben und Quellen da? Ist alles auf A3 lesbar?","web":"ohne","abgabe":"04.12.2026","zeit":"5","modules":[0,1,2,3,4,5,7]}/*CFG*/;
+// Prüfsumme des Passworts (SHA-256). Wird über «Passwort ändern» ersetzt.
+let PW_HASH = /*PW*/'a6dfabaf2f7972be07d0ef973ad2eeb11e8abdc8c643b1b3c217c61c8a019539'/*PW*/;
+const SOURCE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+
+// ---------- Lebensräume (WS3 Themenbuch, Kapitel System Erde) ----------
+const LR = {
+  regenwald:{name:'Regenwald (Amazonas)', tb:'WS3 Themenbuch S. 52/53',
+    lf:'Wer profitiert von der Rodung des Amazonas-Regenwalds, und wer bezahlt dafür?',
+    ch:'Werden die Wälder in der Schweiz wegen der eifrigen Bautätigkeit ebenfalls gerodet?'},
+  gebirge:{name:'Gebirge (Anden)', tb:'WS3 Themenbuch S. 54/55',
+    lf:'Wie verändert der Klimawandel das Leben in den Anden?',
+    ch:'Welche Nutzung findet in den Schweizer Alpen statt?'},
+  wueste:{name:'Wüste (Sahara)', tb:'WS3 Themenbuch S. 56/57',
+    lf:'Wird das Wasser in der Sahara zum grössten Problem?',
+    ch:'Ist Desertifikation auch in der Schweiz ein Thema der Zukunft?'},
+  meer:{name:'Weltmeer (Great Barrier Reef)', tb:'WS3 Themenbuch S. 58/59',
+    lf:'Hat das Great Barrier Reef eine Zukunft?',
+    ch:'Wie beeinflussen Länder wie die Schweiz, die nicht ans Meer grenzen, das Weltmeer?'},
+  stadt:{name:'Stadt (Singapur)', tb:'WS3 Themenbuch S. 60/61',
+    lf:'Ist Singapur als «City in a Garden» ein Vorbild?',
+    ch:'Ist es auch in der Schweiz nötig, Städte durch mehr Grünflächen aufzuwerten?'},
+  nil:{name:'Fluss (Nil in Ägypten)', tb:'WS3 Themenbuch S. 62/63',
+    lf:'Ist der Nil die Lebensader Ägyptens?',
+    ch:'Woher kommt unser Trinkwasser, und wofür nutzen wir Wasser in der Schweiz?'}
+};
+const MINDEST = 'MINDESTENS 15 Elemente aus Ökologie, Soziales und Wirtschaft; MINDESTENS 12 Pfeile, jeder mit Verb beschriftet; MINDESTENS 1 Kreislauf; MINDESTENS 3 geprüfte Quellen; MINDESTENS 1 Bezug zur Schweiz; Antwort auf die Leitfrage in MINDESTENS 5 Sätzen; Titel, Legende und Quellenliste.';
+
+// ---------- Arbeitsschritte (id 0 = Extra: Prompt-Coach) ----------
+const MODULES = [
+  {id:0, name:'Prompt-Coach', desc:'Eigene Prompts verbessern', raster:'B1'},
+  {id:1, name:'Auftrag und Leitfrage', desc:'Was ist verlangt?', raster:'A1 · A4'},
+  {id:2, name:'Stichwörter sammeln', desc:'Methode Schritt 1', raster:'A3 · B3'},
+  {id:3, name:'Quellen prüfen', desc:'Eure Quellen kritisch beurteilen', raster:'B2'},
+  {id:4, name:'Stichwörter ordnen', desc:'Methode Schritt 2', raster:'A3 · A5'},
+  {id:5, name:'Verbindungen prüfen', desc:'Methode Schritt 3: eure Pfeile', raster:'A1 · A2 · A3'},
+  {id:6, name:'Feedback', desc:'Entwurf nach Kriterien prüfen', raster:'A1–A5 · B4'},
+  {id:7, name:'Stresstest und Marktplatz', desc:'Leitfrage verteidigen, Fragen üben', raster:'A4'}
+];
+
+// Kurzfassung von Teil A des Beurteilungsrasters Wirkungsgefüge (für Arbeitsschritt 6)
+const KRITERIEN_RASTER = [
+  'A1 Stimmen unsere Elemente und Pfeile? Erfüllen wir alle Mindestanforderungen?',
+  'A2 Hat jeder Pfeil ein passendes Verb? Erklären wir Fachbegriffe in eigenen Worten?',
+  'A3 Kommen Ökologie, Soziales und Wirtschaft vor? Gibt es einen Kreislauf? Zeigen wir Menschengruppen und ihre Interessen?',
+  'A4 Folgt unsere Antwort auf die Leitfrage aus dem Wirkungsgefüge? Begründen wir sie?',
+  'A5 Sind Titel, Legende, Farben und Quellen da? Ist alles auf A3 lesbar?'
+].join('\n');
+
+const LP_DEFAULT = {
+  auftrag:'Wir erstellen ein digitales Wirkungsgefüge (PowerPoint, OneNote, GoodNotes oder Canva) zu unserem Lebensraum. Es zeigt Elemente, Wechselwirkungen, Probleme und Folgen und beantwortet unsere Leitfrage.',
+  quellen:'MINDESTENS 3 Quellen, davon MINDESTENS 1 aus dem Themenbuch oder dem Arbeitsheft 3.2',
+  kriterien:KRITERIEN_RASTER, web:'ohne', abgabe:'', zeit:'',
+  modules:[0,1,2,3,4,5,6,7]
+};
+
+// SuS-Felder pro Arbeitsschritt
+const SUS_FIELDS = {
+  0:[{k:'eigenerPrompt',l:'Mein Prompt',t:'area',ph:'Füge hier deinen eigenen Prompt ein oder nutze den Bauplan unten.'},
+     {k:'promptZiel',l:'Was soll mit diesem Prompt herauskommen?',ph:'z. B. Fragen, die mir beim Ordnen helfen'}],
+  1:[],
+  2:[{k:'cp1',l:'Checkpoint aus Arbeitsschritt 1',t:'area',ph:'Zusammenfassung aus dem letzten Chat einfügen'},
+     {k:'stichwoerter',l:'Unsere bisherigen Stichwörter (falls schon vorhanden)',t:'area',ph:'Stichwörter mit Komma trennen'}],
+  3:[{k:'qTitel',l:'Titel der Quelle'},{k:'qLink',l:'Herkunft / Link',ph:'Link, Themenbuch-Seite, Arbeitsheft …'},
+     {k:'qAutor',l:'Autor / Herausgeber',ph:'Wer steht dahinter?'},{k:'qDatum',l:'Datum',ph:'Wann veröffentlicht?'},
+     {k:'qInhalt',l:'Inhalt',t:'area',ph:'Kurzer Ausschnitt oder eure Zusammenfassung'}],
+  4:[{k:'stichwoerter',l:'Unsere Stichwörter',t:'area',ph:'Alle Stichwörter, die ihr gesammelt habt'},
+     {k:'gruppen',l:'Unsere Gruppen mit Obertitel (falls schon vorhanden)',t:'area',ph:'z. B. Landwirtschaft: Baumwolle, Bewässerung, Dünger'}],
+  5:[{k:'pfeile',l:'Unsere Pfeile (eine Verbindung pro Zeile)',t:'area',ph:'Element A → Verb → Element B (grün / rot / schwarz)\nz. B. Baumwollanbau → braucht viel → Bewässerungswasser (rot)'}],
+  6:[{k:'entwurf',l:'Unser Entwurf',t:'area',ph:'Pfeilliste, Gruppen und Antwort auf die Leitfrage einfügen oder das Wirkungsgefüge genau beschreiben'}],
+  7:[{k:'kern',l:'Unsere Antwort auf die Leitfrage',t:'area',ph:'Antwort in 3–5 Sätzen'}]
+};
+// LP-Felder, die ein Arbeitsschritt braucht
+const LP_FIELDS = { 0:[], 1:['auftrag','abgabe','zeit'], 2:[], 3:['quellen'], 4:[], 5:[], 6:['kriterien'], 7:[] };
+const LP_LABELS = {auftrag:'Auftrag', abgabe:'Abgabe', zeit:'Verfügbare Zeit', quellen:'Vorgabe Quellen', kriterien:'Bewertungskriterien'};
+const LP_AREA = ['auftrag','kriterien'];
+
+// ---------- Zustand ----------
+const store = {
+  get(k,d){try{const v=localStorage.getItem('ptwg_'+k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem('ptwg_'+k,JSON.stringify(v))}catch(e){}}
+};
+let lp = Object.assign({}, LP_DEFAULT, store.get('lp',{}), EMBED||{});
+lp.modules = (lp.modules||[]).filter(id=>MODULES.some(m=>m.id===id));
+if(!lp.modules.length) lp.modules = LP_DEFAULT.modules.slice();
+const locked = !!EMBED;               // Klassen-Version: LP-Angaben fix, Bereich ausgeblendet
+let sus = store.get('sus',{});
+let state = Object.assign({mod:1, group:2}, store.get('state',{}));
+if(!lp.modules.includes(state.mod)) state.mod = lp.modules.find(x=>x!==0) ?? lp.modules[0];
+let unlocked = false;
+
+// ---------- Hilfen ----------
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function val(k, ph){
+  const v = (k in LP_LABELS) ? (lp[k] || sus['lp_'+k]) : sus[k];
+  return (v && String(v).trim()) ? String(v).trim() : '[' + ph + ']';
+}
+function lr(){ return LR[sus.lr] || null; }
+function lrName(){ return lr() ? lr().name : '[Lebensraum wählen]'; }
+function lrLeit(){ return lr() ? lr().lf : '[Leitfrage]'; }
+function lrTB(){ return lr() ? lr().tb + ', Arbeitsheft 3.2 S. 12–19' : '[Themenbuch-Seiten]'; }
+function letters(n){return ['A','B','C','D'].slice(0,n).join(', ')}
+
+// ---------- Passwort (SHA-256, ohne externe Bibliothek) ----------
+function sha256(str){
+  const rotr=(x,n)=>(x>>>n)|(x<<(32-n));
+  const K=[],H=[]; let n=2,c=0;
+  const isP=x=>{for(let i=2;i*i<=x;i++) if(x%i===0) return false; return true};
+  while(c<64){ if(isP(n)){ if(c<8) H[c]=(Math.pow(n,1/2)%1)*4294967296|0; K[c]=(Math.pow(n,1/3)%1)*4294967296|0; c++; } n++; }
+  const bytes=new TextEncoder().encode(str), l=bytes.length;
+  const m=new Uint8Array(((l+9+63)>>6)<<6); m.set(bytes); m[l]=0x80;
+  const bl=l*8; m[m.length-4]=(bl>>>24)&255; m[m.length-3]=(bl>>>16)&255; m[m.length-2]=(bl>>>8)&255; m[m.length-1]=bl&255;
+  const w=new Int32Array(64); let h=H.slice();
+  for(let i=0;i<m.length;i+=64){
+    for(let t=0;t<16;t++) w[t]=(m[i+4*t]<<24)|(m[i+4*t+1]<<16)|(m[i+4*t+2]<<8)|m[i+4*t+3];
+    for(let t=16;t<64;t++){
+      const s0=rotr(w[t-15],7)^rotr(w[t-15],18)^(w[t-15]>>>3);
+      const s1=rotr(w[t-2],17)^rotr(w[t-2],19)^(w[t-2]>>>10);
+      w[t]=(w[t-16]+s0+w[t-7]+s1)|0;
+    }
+    let [a,b,cc,d,e,f,g,hh]=h;
+    for(let t=0;t<64;t++){
+      const t1=(hh+(rotr(e,6)^rotr(e,11)^rotr(e,25))+((e&f)^(~e&g))+K[t]+w[t])|0;
+      const t2=((rotr(a,2)^rotr(a,13)^rotr(a,22))+((a&b)^(a&cc)^(b&cc)))|0;
+      hh=g; g=f; f=e; e=(d+t1)|0; d=cc; cc=b; b=a; a=(t1+t2)|0;
+    }
+    h=[h[0]+a|0,h[1]+b|0,h[2]+cc|0,h[3]+d|0,h[4]+e|0,h[5]+f|0,h[6]+g|0,h[7]+hh|0];
+  }
+  return h.map(x=>(x>>>0).toString(16).padStart(8,'0')).join('');
+}
+const pwHash = pw => sha256('prompt-trainer:' + pw);
+
+// ---------- Prompt bauen ----------
+function webRule(){
+  return lp.web === 'mit'
+    ? '7. Du darfst im Internet nur nachschauen, um eine Aussage von uns zu prüfen. Nenne dann immer den Link, damit wir die Quelle selbst öffnen und prüfen können. Schlage keine neuen Quellen vor und übernimm keine Inhalte in unser Wirkungsgefüge.'
+    : '7. Suche nicht im Internet. Nenne keine Links und schlage keine Quellen vor. Arbeite nur mit dem, was wir dir schreiben.';
+}
+function rules(){
+  const g = state.group;
+  const r3 = g === 1
+    ? '3. Ich arbeite alleine. Lies «wir» und «uns» in diesem Prompt als «ich» und «mich».'
+    : `3. Wir sind ${g} Personen: ${letters(g)}. Wir schreiben vor jede Antwort, wer spricht (z. B. «B: …»). Sprich uns einzeln an und achte darauf, dass alle etwa gleich viel beitragen. Frag direkt nach, wenn jemand länger nichts gesagt hat.`;
+  const r6 = g === 1
+    ? '6. Wenn ich «Checkpoint» schreibe, fasse so zusammen: Arbeitsschritt / Meine Entscheide mit Begründung / Offene Fragen / Nächster Schritt.'
+    : '6. Wenn wir «Checkpoint» schreiben, fasse so zusammen: Arbeitsschritt / Unsere Entscheide mit Begründung / Offene Fragen / Nächster Schritt / Beitrag jeder Person (je 1 Satz).';
+  return [
+    'SPIELREGELN FÜR DICH (KI):',
+    '1. Du bist unser Lerncoach (Sekundarschule, Kanton Zürich, Fach Geografie). Wir erstellen ein Wirkungsgefüge. Du machst die Arbeit nicht für uns. Du stellst Fragen, damit wir selbst denken und entscheiden.',
+    '2. Stelle höchstens 2 Fragen auf einmal. Schreibe kurz und einfach.',
+    r3,
+    '4. Hilfe-Leiter: Wenn wir nicht weiterkommen, hilfst du in Stufen. Stufe 1: Gegenfrage. Stufe 2: Hinweis oder Suchbegriff. Stufe 3: Beispiel zu einem ANDEREN Lebensraum (z. B. Aralsee). Stufe 4: Teillösung, aber nur, wenn wir «Stufe 4» schreiben und erklären, was wir schon versucht haben. Nenne immer die Stufe, auf der du gerade hilfst.',
+    '5. Zeichne oder schreibe nie das Wirkungsgefüge für uns. Nenne keine neuen Elemente oder Pfeile und beantworte die Leitfrage nicht für uns, ausser über Stufe 4. Erfinde keine Quellen, Zahlen oder Zitate. Wenn du etwas nicht sicher weisst, sag es.',
+    r6, webRule(), '---'
+  ].join('\n');
+}
+function first(){ return state.group === 1 ? 'mir' : 'Person A'; }
+function kopf(){ return 'Unser Lebensraum: ' + lrName() + '\nUnsere Leitfrage: ' + lrLeit(); }
+
+function build(id){
+  const R = rules();
+  switch(id){
+    case 0: return [
+      'AUFGABE: Ich will lernen, gute Prompts zu schreiben. Führe meinen Prompt NICHT aus.',
+      'Mein Prompt: ' + val('eigenerPrompt','eigenen Prompt einfügen'),
+      'Mein Ziel damit: ' + val('promptZiel','was soll herauskommen?'),
+      'Gib mir Rückmeldung zu diesen 6 Bausteinen: Rolle, Ziel, Kontext, Format, Grenzen, Prüfbarkeit.',
+      'Bewerte jeden Baustein mit «vorhanden», «teilweise» oder «fehlt» und stelle zu jedem Baustein, der nicht vorhanden ist, eine Frage, die mir hilft, ihn zu verbessern.',
+      'Schreibe meinen Prompt nicht für mich um. Wenn ich dir eine verbesserte Version schicke, vergleiche sie mit der alten und sag mir, was besser geworden ist.',
+      'Schreibe kurz und einfach (Sekundarschule).'].join('\n');
+    case 1: return R + '\n' + [
+      'ARBEITSSCHRITT 1: AUFTRAG UND LEITFRAGE KLÄREN',
+      kopf(),
+      'Unser Material: ' + lrTB(),
+      'Unser Auftrag: ' + val('auftrag','Auftrag der Lehrperson'),
+      'Mindestanforderungen: ' + MINDEST,
+      'Abgabe: ' + val('abgabe','Datum') + '   Verfügbare Zeit: ' + val('zeit','z. B. 6 Lektionen'),
+      'Deine Aufgabe: Prüfe mit Fragen, ob wir den Auftrag verstanden haben. Kläre mit uns: Was ist ein Wirkungsgefüge? Was bedeuten die wichtigen Wörter in unserer Leitfrage? Was müssen wir herausfinden, um die Leitfrage zu beantworten? Welche Mindestanforderungen gibt es? Wie teilen wir Arbeit und Zeit ein?',
+      'Erkläre nichts für uns. Lass jede Person in eigenen Worten antworten und gib Rückmeldung, ob etwas fehlt oder falsch verstanden wurde.',
+      `Beginne jetzt mit der ersten Frage an ${first()}.`].join('\n');
+    case 2: return R + '\n' + [
+      'ARBEITSSCHRITT 2: STICHWÖRTER SAMMELN',
+      kopf(),
+      'Checkpoint aus Arbeitsschritt 1: ' + val('cp1','Checkpoint einfügen'),
+      'Unsere bisherigen Stichwörter: ' + val('stichwoerter','noch keine'),
+      'Deine Aufgabe: Hilf uns mit Fragen, MINDESTENS 15 Stichwörter zu sammeln. Nenne selbst KEINE Stichwörter.',
+      'Frag nacheinander nach den drei Bereichen: Ökologie (Natur und Umwelt), Soziales (Menschen, Zusammenleben, Gesundheit) und Wirtschaft (Produktion, Handel, Arbeit).',
+      'Frag auch: Welche Menschengruppen spielen eine Rolle? Was wollen sie? Wer profitiert, wer verliert?',
+      'Frag bei jedem Stichwort, aus welcher Quelle wir es haben.',
+      'Zeige uns zum Schluss, welcher Bereich noch schwach ist, ohne Stichwörter vorzuschlagen.'].join('\n');
+    case 3: return R + '\n' + [
+      'ARBEITSSCHRITT 3: QUELLEN PRÜFEN',
+      'Unser Lebensraum: ' + lrName(),
+      'Wir suchen unsere Quellen selbst. Du schlägst KEINE Quellen vor, sondern prüfst mit uns. Vorgabe der Lehrperson: ' + val('quellen','Anzahl Quellen'),
+      'Unsere Grundlage: ' + lrTB() + '. Weitere Quellen suchen wir selbst.',
+      'Unsere Quelle: Titel: ' + val('qTitel','Titel') + '  Herkunft/Link: ' + val('qLink','Link oder Buch') + '  Autor/Herausgeber: ' + val('qAutor','wer?') + '  Datum: ' + val('qDatum','wann?'),
+      'Inhalt (Ausschnitt oder unsere Zusammenfassung): ' + val('qInhalt','einfügen'),
+      'Deine Aufgabe: Geh diese Fragen mit uns durch, eine nach der anderen: Wer steht hinter der Quelle? Wie aktuell ist sie? Welche Absicht hat sie (informieren, verkaufen, überzeugen, unterhalten)? Werden Belege genannt? Finden wir die gleiche Information in einer zweiten, unabhängigen Quelle?',
+      'Lass uns zuerst selbst antworten, dann ergänzt du mit Fragen oder Hinweisen.',
+      'Am Ende entscheiden WIR: «verlässlich», «mit Vorsicht» oder «nicht brauchbar», mit Begründung.',
+      lp.web === 'mit'
+        ? 'Wichtig: Wenn du die Quelle im Internet nachschaust, sag genau, was du gefunden hast, und nenne den Link. Wenn du sie nicht findest, sag es ehrlich. Erfinde nie Angaben über die Quelle.'
+        : 'Wichtig: Du kannst die Quelle nicht selbst öffnen. Sag ehrlich, was du nicht überprüfen kannst. Erfinde nie Angaben über die Quelle.'].join('\n');
+    case 4: return R + '\n' + [
+      'ARBEITSSCHRITT 4: STICHWÖRTER ORDNEN',
+      kopf(),
+      'Unsere Stichwörter: ' + val('stichwoerter','Stichwörter einfügen'),
+      'Unsere Gruppen: ' + val('gruppen','noch keine'),
+      'Deine Aufgabe: Wir gruppieren die Stichwörter selbst und geben jeder Gruppe einen Obertitel. Frag uns dann: Passt jedes Stichwort in seine Gruppe? Welche Stichwörter sind für unsere Leitfrage unwichtig? Gehört jedes Stichwort zu Ökologie, Soziales oder Wirtschaft?',
+      'Wenn ein Stichwort zu allgemein ist (z. B. «Umwelt» oder «Probleme»), frag, was genau wir meinen.',
+      'Ordne nichts für uns und ergänze keine Stichwörter.'].join('\n');
+    case 5: return R + '\n' + [
+      'ARBEITSSCHRITT 5: VERBINDUNGEN PRÜFEN',
+      kopf(),
+      'Unsere Pfeile (Element → Verb → Element, Farbe: grün = gut, rot = schlecht für Mensch oder Umwelt, schwarz = neutral oder beides):',
+      val('pfeile','Pfeilliste einfügen, eine Verbindung pro Zeile'),
+      'Deine Aufgabe: Prüfe unsere Pfeile einzeln, höchstens 2 auf einmal. Frag bei jedem Pfeil: Warum führt das eine zum anderen? Woher wissen wir das? Ist das Verb genau genug? Passt die Farbe?',
+      'Wenn zwischen zwei Elementen ein Schritt fehlt, frag, was dazwischen passiert. Nenne den fehlenden Schritt aber nicht.',
+      'Frag zum Schluss: Wo ist unser Kreislauf? Welche Bereiche (Ökologie, Soziales, Wirtschaft) sind noch nicht miteinander verbunden? Zähle unsere Pfeile und sag, ob wir MINDESTENS 12 haben.',
+      'Ergänze keine eigenen Elemente oder Pfeile.'].join('\n');
+    case 6: return R + '\n' + [
+      'ARBEITSSCHRITT 6: FEEDBACK',
+      kopf(),
+      'Mindestanforderungen: ' + MINDEST,
+      'Unsere Bewertungskriterien: ' + val('kriterien','Kriterienraster der Lehrperson'),
+      'Unser Entwurf: ' + val('entwurf','Entwurf einfügen'),
+      'Deine Aufgabe: Gib Feedback NUR zu diesen Kriterien. Für jedes Kriterium: Was ist schon gut (konkret)? Was fehlt oder ist unklar? Eine Frage, die uns weiterbringt.',
+      'Prüfe auch, ob alle Mindestanforderungen erfüllt sind. Gib keine Note und schreibe nichts für uns um.',
+      'Zum Schluss: Nenne die 2 Verbesserungen, die am meisten bringen. Frag dann jede Person, welche Verbesserung sie übernimmt.'].join('\n');
+    case 7: return R + '\n' + [
+      'ARBEITSSCHRITT 7: STRESSTEST UND MARKTPLATZ-PROBE',
+      kopf(),
+      'Unsere Antwort auf die Leitfrage: ' + val('kern','Antwort in 3–5 Sätzen'),
+      'Teil 1: Spiel einen kritischen, aber fairen Gegner. Greife unsere Antwort mit 3 starken Gegenargumenten oder kritischen Fragen an, eines nach dem anderen. Richte jedes Argument an eine andere Person. Sag nach jeder Antwort kurz, ob sie überzeugt hat und warum (nicht).',
+      'Teil 2: Spiel danach Besuchende am Marktplatz. Wir haben pro Stand 2,5 Minuten. Stelle jeder Person 2 Fragen zu unserem Wirkungsgefüge, z. B. «Erklär mir euren wichtigsten Kreislauf.» Sag nach jeder Antwort, ob sie für Mitschüler verständlich war.',
+      'Zum Schluss: Wo ist unsere Antwort noch schwach? Was sollten wir im Wirkungsgefüge besser zeigen?'].join('\n');
+  }
+}
+
+// ---------- Rendern ----------
+function stepLabel(id){ return id===0 ? 'Extra' : 'Arbeitsschritt '+id; }
+function renderLR(){
+  const s=$('#lrSel'); s.innerHTML='';
+  [['','– Lebensraum wählen –']].concat(Object.entries(LR).map(([k,v])=>[k,v.name])).forEach(([k,n])=>{
+    const o=document.createElement('option'); o.value=k; o.textContent=n; s.appendChild(o); });
+  s.value = sus.lr || '';
+  s.onchange=()=>{ sus.lr=s.value; save(); renderAll(); };
+}
+function renderLRInfo(){
+  const box=$('#lrInfo'), l=lr();
+  if(!l){ box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  box.innerHTML=`<b>Leitfrage:</b> ${esc(l.lf)}<br><b>Material:</b> ${esc(l.tb)}, Arbeitsheft 3.2 S. 12–19<br><b>Frage für den Schweiz-Bezug:</b> ${esc(l.ch)}`;
+}
+function renderModules(){
+  const g = $('#modGrid'); g.innerHTML='';
+  MODULES.filter(m=>lp.modules.includes(m.id)).sort((a,b)=>(a.id||99)-(b.id||99)).forEach(m=>{
+    const b=document.createElement('button');
+    b.className='mod'+(m.id===state.mod?' active':'');
+    b.innerHTML=`<div class="nr">${stepLabel(m.id)}</div><b>${esc(m.name)}</b><span>${esc(m.desc)}</span><br><span class="rb" title="Kriterien im Beurteilungsraster">Raster ${esc(m.raster)}</span>`;
+    b.onclick=()=>{state.mod=m.id; save(); renderAll(); document.querySelector('#groupSeg').scrollIntoView({behavior:'smooth',block:'center'})};
+    g.appendChild(b);
+  });
+}
+function renderGroup(){
+  const s=$('#groupSeg'); s.innerHTML='';
+  [[1,'Alleine'],[2,'2 Personen'],[3,'3 Personen']].forEach(([n,l])=>{
+    const b=document.createElement('button'); b.textContent=l;
+    if(state.group===n) b.className='on';
+    b.onclick=()=>{state.group=n; save(); renderAll()};
+    s.appendChild(b);
+  });
+}
+function fieldEl(f, key, value){
+  const wrap=document.createElement('div');
+  const lab=document.createElement('label'); lab.textContent=f.l; wrap.appendChild(lab);
+  const el=document.createElement(f.t==='area'?'textarea':'input');
+  if(f.ph) el.placeholder=f.ph;
+  el.value=value||'';
+  el.addEventListener('input',()=>{sus[key]=el.value; save(); renderPreview()});
+  wrap.appendChild(el); return wrap;
+}
+function renderFields(){
+  const box=$('#fields'); box.innerHTML='';
+  const id=state.mod;
+  const need = LP_FIELDS[id];
+  const set = need.filter(k=>lp[k] && String(lp[k]).trim());
+  const open = need.filter(k=>!(lp[k] && String(lp[k]).trim()));
+  const info=$('#lpInfo');
+  if(set.length){
+    info.classList.remove('hidden');
+    info.innerHTML='<b>Von der Lehrperson festgelegt:</b><br>'+set.map(k=>`${LP_LABELS[k]}: ${esc(lp[k]).replace(/\n/g,'<br>')}`).join('<br>');
+  } else info.classList.add('hidden');
+  open.forEach(k=>box.appendChild(fieldEl({l:LP_LABELS[k],t:LP_AREA.includes(k)?'area':''},'lp_'+k,sus['lp_'+k])));
+  SUS_FIELDS[id].forEach(f=>box.appendChild(fieldEl(f,f.k,sus[f.k])));
+  if(id===0) box.appendChild(bauplan());
+  if(!box.children.length){
+    const p=document.createElement('p'); p.style.cssText='color:var(--muted);font-size:15px;margin-bottom:0';
+    p.textContent='Hier müsst ihr nichts ausfüllen.'; box.appendChild(p);
+  }
+}
+function bauplan(){
+  const d=document.createElement('details');
+  d.innerHTML='<summary style="cursor:pointer;font-weight:600;color:var(--blue2);padding:6px 0">Bauplan: Prompt Schritt für Schritt aufbauen</summary>';
+  const parts=[['bRolle','Rolle','Wer soll die KI sein? (z. B. Lerncoach, kritische Leserin)'],
+    ['bZiel','Ziel','Was soll am Ende herauskommen?'],
+    ['bKontext','Kontext','Was muss die KI wissen? (Klasse, Lebensraum, Leitfrage)'],
+    ['bFormat','Format','Wie soll die Antwort aussehen? (Länge, Liste, Fragen)'],
+    ['bGrenzen','Grenzen','Was soll die KI NICHT tun?'],
+    ['bPruef','Prüfbarkeit','Woran merke ich, ob die Antwort gut ist?']];
+  parts.forEach(([k,l,ph])=>d.appendChild(fieldEl({l,ph},k,sus[k])));
+  const b=document.createElement('button'); b.className='btn ghost'; b.style.marginTop='12px';
+  b.textContent='Bauplan als «Mein Prompt» übernehmen';
+  b.onclick=()=>{
+    const t=parts.filter(([k])=>sus[k]&&sus[k].trim()).map(([k,l])=>`${l}: ${sus[k].trim()}`).join('\n');
+    if(!t){toast('Zuerst mindestens einen Baustein ausfüllen.');return}
+    sus.eigenerPrompt=t; save(); renderFields(); renderPreview(); toast('Übernommen');
+  };
+  d.appendChild(b); return d;
+}
+function renderPreview(){
+  const txt=build(state.mod);
+  $('#preview').innerHTML=esc(txt).replace(/\[[^\]\n]+\]/g,m=>`<span class="ph">${m}</span>`);
+  const missing=(txt.match(/\[[^\]\n]+\]/g)||[]).length;
+  $('#status').innerHTML = missing
+    ? `<p class="warn">Noch ${missing} ${missing===1?'Lücke':'Lücken'} offen (orange). Du kannst trotzdem kopieren.</p>`
+    : '<p class="ok">Alles ausgefüllt. Bereit zum Kopieren.</p>';
+}
+function renderAll(){
+  renderLRInfo(); renderModules(); renderGroup(); renderFields(); renderPreview();
+  const cb=$('#copyBtn'); cb.textContent='Prompt kopieren'; cb.classList.remove('done');
+}
+function save(){store.set('sus',sus); store.set('state',state); if(!locked) store.set('lp',lp)}
+
+// ---------- Kopieren ----------
+async function copyText(t){
+  try{
+    if(navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(t); return true; }
+  }catch(e){}
+  try{
+    const ta=document.createElement('textarea'); ta.value=t; ta.setAttribute('readonly','');
+    ta.style.cssText='position:fixed;top:0;left:0;opacity:0;font-size:16px';
+    document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0,t.length);
+    const ok=document.execCommand('copy'); document.body.removeChild(ta); if(ok) return true;
+  }catch(e){}
+  $('#fallbackBox').classList.remove('hidden'); $('#fallbackText').value=t;
+  $('#fallbackBox').scrollIntoView({behavior:'smooth'});
+  return false;
+}
+function toast(m){const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),1800)}
+
+$('#copyBtn').onclick=async()=>{
+  const ok=await copyText(build(state.mod));
+  if(ok){const b=$('#copyBtn'); b.textContent='Kopiert – jetzt im KI-Chat einfügen'; b.classList.add('done'); toast('Prompt kopiert');
+    setTimeout(()=>{b.textContent='Prompt kopieren'; b.classList.remove('done')},3500);}
+};
+
+// ---------- Lehrperson ----------
+function renderLP(){
+  document.querySelectorAll('[data-lp]').forEach(el=>{
+    el.value=lp[el.dataset.lp]||'';
+    el.oninput=el.onchange=()=>{lp[el.dataset.lp]=el.value; save(); renderAll()};
+  });
+  const c=$('#lpModules'); c.innerHTML='';
+  MODULES.forEach(m=>{const b=document.createElement('button'); b.className='chip';
+    const on=lp.modules.includes(m.id);
+    b.style.cssText=on?'background:var(--blue);color:#fff;border-style:solid':'';
+    b.textContent=`${m.id===0?'Extra':m.id} ${m.name}`;
+    b.onclick=()=>{ if(on){ if(lp.modules.length===1) return; lp.modules=lp.modules.filter(x=>x!==m.id);} else {lp.modules=[...lp.modules,m.id].sort((a,b)=>a-b);}
+      if(!lp.modules.includes(state.mod)) state.mod=lp.modules.find(x=>x!==0) ?? lp.modules[0]; save(); renderLP(); renderAll(); };
+    c.appendChild(b)});
+}
+function makeFile(cfg, hash){
+  let html = SOURCE;
+  if(cfg) html = html.replace('/*CFG*/null/*CFG*/', ()=>'/*CFG*/'+JSON.stringify(cfg).replace(/</g,'\\u003c')+'/*CFG*/');
+  html = html.replace(/\/\*PW\*\/'[0-9a-f_A-Z]*'\/\*PW\*\//, ()=>`/*PW*/'${hash}'/*PW*/`);
+  return html;
+}
+function download(html, name){
+  const blob=new Blob([html],{type:'text/html'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=name; document.body.appendChild(a); a.click(); a.remove();
+}
+function openLP(){ unlocked=true; $('#pwBox').classList.add('hidden'); $('#lpPanel').classList.remove('hidden');
+  $('#lpToggle').textContent='Lehrperson (offen)'; renderLP(); }
+function lockLP(){ unlocked=false; $('#lpPanel').classList.add('hidden'); $('#lpToggle').textContent='Lehrperson'; toast('Bereich gesperrt'); }
+
+let tries=0, waitUntil=0;
+function checkPw(){
+  const msg=$('#pwMsg'), now=Date.now();
+  if(now<waitUntil){ msg.textContent=`Zu viele Versuche. Bitte ${Math.ceil((waitUntil-now)/1000)} Sekunden warten.`; msg.classList.remove('hidden'); return; }
+  const inp=$('#pwInput');
+  if(pwHash(inp.value)===PW_HASH){ tries=0; inp.value=''; msg.classList.add('hidden'); openLP(); return; }
+  tries++; inp.value='';
+  if(tries>=5){ waitUntil=now+60000; tries=0; msg.textContent='Falsches Passwort. Der Zugang ist für 60 Sekunden gesperrt.'; }
+  else msg.textContent='Falsches Passwort.';
+  msg.classList.remove('hidden');
+}
+
+if(locked){ $('#lpToggle').classList.add('hidden'); }
+$('#lpToggle').onclick=()=>{
+  if(unlocked){ $('#lpPanel').classList.toggle('hidden'); renderLP(); return; }
+  const box=$('#pwBox'); box.classList.toggle('hidden');
+  if(!box.classList.contains('hidden')){ $('#pwInput').focus(); }
+};
+$('#pwOk').onclick=checkPw;
+$('#pwInput').addEventListener('keydown',e=>{ if(e.key==='Enter') checkPw(); });
+function closePw(){ $('#pwBox').classList.add('hidden'); $('#pwMsg').classList.add('hidden'); $('#pwInput').value=''; }
+$('#pwCancel').onclick=closePw;
+$('#pwBox').addEventListener('click',e=>{ if(e.target.id==='pwBox') closePw(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !$('#pwBox').classList.contains('hidden')) closePw(); });
+$('#lpLock').onclick=lockLP;
+$('#lpKrit').onclick=()=>{
+  if(lp.kriterien && lp.kriterien.trim() && lp.kriterien!==KRITERIEN_RASTER && !confirm('Die bisherigen Kriterien werden ersetzt. Weiter?')) return;
+  lp.kriterien=KRITERIEN_RASTER; save(); renderLP(); renderAll(); toast('Kriterien eingesetzt');
+};
+$('#lpReset').onclick=()=>{
+  if(!confirm('Alle Einstellungen und Eingaben auf diesem Gerät löschen?')) return;
+  lp=Object.assign({}, LP_DEFAULT); sus={}; save(); renderLR(); renderLP(); renderAll(); toast('Zurückgesetzt'); };
+$('#lpDownload').onclick=()=>{
+  if(!unlocked) return;
+  try{ download(makeFile(lp, PW_HASH), 'Prompt-Trainer_Wirkungsgefuege_Klasse.html'); toast('Download gestartet'); }
+  catch(e){ toast('Download hier nicht möglich'); }
+};
+$('#pwChange').onclick=()=>{
+  if(!unlocked) return;
+  const a=$('#pwNew1').value, b=$('#pwNew2').value, msg=$('#pwChangeMsg');
+  msg.classList.remove('hidden','ok'); msg.classList.add('warn');
+  if(a.length<8){ msg.textContent='Das Passwort muss mindestens 8 Zeichen lang sein.'; return; }
+  if(a!==b){ msg.textContent='Die beiden Passwörter sind nicht gleich.'; return; }
+  try{
+    const h=pwHash(a);
+    download(makeFile(null, h), 'Prompt-Trainer_Wirkungsgefuege.html');
+    PW_HASH=h; $('#pwNew1').value=''; $('#pwNew2').value='';
+    msg.classList.remove('warn'); msg.classList.add('ok');
+    msg.textContent='Neue Datei heruntergeladen. Ab jetzt nur noch diese Datei verwenden. In dieser alten Datei gilt nach dem Neuladen wieder das alte Passwort.';
+  }catch(e){ msg.textContent='Download hier nicht möglich. Öffne die Datei direkt im Browser.'; }
+};
+
+renderLR();
+renderAll();
+</script></body></html>
